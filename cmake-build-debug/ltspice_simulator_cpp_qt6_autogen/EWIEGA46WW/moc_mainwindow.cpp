@@ -42,6 +42,7 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "MainWindow",
         "hNewSchematic",
         "",
+        "hSendData",
         "hShowSettings",
         "hSaveProject",
         "hOpenProject",
@@ -62,34 +63,42 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "onSignalDataReceived",
         "std::map<double,double>",
         "data",
-        "signalName"
+        "signalName",
+        "onDataReceived",
+        "type"
     };
 
     QtMocHelpers::UintData qt_methods {
         // Slot 'hNewSchematic'
         QtMocHelpers::SlotData<void()>(1, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'hShowSettings'
+        // Slot 'hSendData'
         QtMocHelpers::SlotData<void()>(3, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'hSaveProject'
+        // Slot 'hShowSettings'
         QtMocHelpers::SlotData<void()>(4, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'hOpenProject'
+        // Slot 'hSaveProject'
         QtMocHelpers::SlotData<void()>(5, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'hNetworkConnection'
+        // Slot 'hOpenProject'
         QtMocHelpers::SlotData<void()>(6, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'hNetworkConnection'
+        QtMocHelpers::SlotData<void()>(7, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'onNetworkStatusChanged'
-        QtMocHelpers::SlotData<void(bool, const QString &)>(7, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { QMetaType::Bool, 8 }, { QMetaType::QString, 9 },
+        QtMocHelpers::SlotData<void(bool, const QString &)>(8, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 9 }, { QMetaType::QString, 10 },
         }}),
         // Slot 'onVoltageSourceReceived'
-        QtMocHelpers::SlotData<void(const QString &, const QString &, const QString &, double, bool, double, double, double)>(10, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { QMetaType::QString, 11 }, { QMetaType::QString, 12 }, { QMetaType::QString, 13 }, { QMetaType::Double, 14 },
-            { QMetaType::Bool, 15 }, { QMetaType::Double, 16 }, { QMetaType::Double, 17 }, { QMetaType::Double, 18 },
+        QtMocHelpers::SlotData<void(const QString &, const QString &, const QString &, double, bool, double, double, double)>(11, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 12 }, { QMetaType::QString, 13 }, { QMetaType::QString, 14 }, { QMetaType::Double, 15 },
+            { QMetaType::Bool, 16 }, { QMetaType::Double, 17 }, { QMetaType::Double, 18 }, { QMetaType::Double, 19 },
         }}),
         // Slot 'onCircuitFileReceived'
-        QtMocHelpers::SlotData<void()>(19, 2, QMC::AccessPrivate, QMetaType::Void),
+        QtMocHelpers::SlotData<void()>(20, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'onSignalDataReceived'
-        QtMocHelpers::SlotData<void(const std::map<double,double> &, const QString &)>(20, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { 0x80000000 | 21, 22 }, { QMetaType::QString, 23 },
+        QtMocHelpers::SlotData<void(const std::map<double,double> &, const QString &)>(21, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { 0x80000000 | 22, 23 }, { QMetaType::QString, 24 },
+        }}),
+        // Slot 'onDataReceived'
+        QtMocHelpers::SlotData<void(const QByteArray &, const QString &)>(25, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QByteArray, 23 }, { QMetaType::QString, 26 },
         }}),
     };
     QtMocHelpers::UintData qt_properties {
@@ -115,14 +124,16 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
         case 0: _t->hNewSchematic(); break;
-        case 1: _t->hShowSettings(); break;
-        case 2: _t->hSaveProject(); break;
-        case 3: _t->hOpenProject(); break;
-        case 4: _t->hNetworkConnection(); break;
-        case 5: _t->onNetworkStatusChanged((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 6: _t->onVoltageSourceReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[8]))); break;
-        case 7: _t->onCircuitFileReceived(); break;
-        case 8: _t->onSignalDataReceived((*reinterpret_cast< std::add_pointer_t<std::map<double,double>>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 1: _t->hSendData(); break;
+        case 2: _t->hShowSettings(); break;
+        case 3: _t->hSaveProject(); break;
+        case 4: _t->hOpenProject(); break;
+        case 5: _t->hNetworkConnection(); break;
+        case 6: _t->onNetworkStatusChanged((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 7: _t->onVoltageSourceReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[8]))); break;
+        case 8: _t->onCircuitFileReceived(); break;
+        case 9: _t->onSignalDataReceived((*reinterpret_cast< std::add_pointer_t<std::map<double,double>>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 10: _t->onDataReceived((*reinterpret_cast< std::add_pointer_t<QByteArray>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
         default: ;
         }
     }
@@ -147,14 +158,14 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 9)
+        if (_id < 11)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 9;
+        _id -= 11;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 9)
+        if (_id < 11)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 9;
+        _id -= 11;
     }
     return _id;
 }

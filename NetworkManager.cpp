@@ -1,7 +1,10 @@
 #include "NetworkManager.h"
 #include <QHostAddress>
 #include <QFile>
+#include <QTcpSocket>
 #include <QFileInfo>
+#include <QNetworkProxy>
+
 
 NetworkManager::NetworkManager(Circuit* circuit, QObject* parent)
     : QObject(parent), circuit(circuit), role(NetworkRole::None), connected(false) {
@@ -10,16 +13,36 @@ NetworkManager::NetworkManager(Circuit* circuit, QObject* parent)
 }
 
 NetworkManager::~NetworkManager() {
-    disconnect();
+    if (server) {
+        server->close();
+        delete server;
+        server = nullptr;
+    }
+    if (clientSocket) {
+        clientSocket->disconnectFromHost();
+        if (clientSocket->state() == QAbstractSocket::ConnectedState) {
+            clientSocket->waitForDisconnected(1000);
+        }
+        delete clientSocket;
+        clientSocket = nullptr;
+    }
 }
 
+// NetworkManager::~NetworkManager() {
+//     disconnect();
+// }
+
 bool NetworkManager::startServer(quint16 port) {
+    qDebug() << "Starting server on port:" << port;
     if (server) {
         delete server;
         server = nullptr;
     }
 
     server = new QTcpServer(this);
+
+    server->setProxy(QNetworkProxy::NoProxy); // added
+
     if (!server->listen(QHostAddress::Any, port)) {
         emit connectionStatusChanged(false, "Server failed to start: " + server->errorString());
         return false;
@@ -32,6 +55,7 @@ bool NetworkManager::startServer(quint16 port) {
 }
 
 bool NetworkManager::connectToServer(const QString& host, quint16 port) {
+    qDebug() << "Connecting to server:" << host << ":" << port;
     if (clientSocket) {
         clientSocket->disconnectFromHost();
         delete clientSocket;
@@ -39,6 +63,9 @@ bool NetworkManager::connectToServer(const QString& host, quint16 port) {
     }
 
     clientSocket = new QTcpSocket(this);
+
+    clientSocket->setProxy(QNetworkProxy::NoProxy);//added
+
     connect(clientSocket, &QTcpSocket::connected, this, [this]() {
         connected = true;
         emit connectionStatusChanged(true, "Connected to server");
@@ -48,7 +75,7 @@ bool NetworkManager::connectToServer(const QString& host, quint16 port) {
     connect(clientSocket, &QTcpSocket::disconnected, this, &NetworkManager::socketDisconnected);
 
     clientSocket->connectToHost(host, port);
-    if (!clientSocket->waitForConnected(5000)) {
+    if (!clientSocket->waitForConnected(10000)) { //increasedd to 10 seconds!
         emit connectionStatusChanged(false, "Connection timeout");
         return false;
     }
@@ -126,6 +153,7 @@ void NetworkManager::sendSignalData(const std::map<double, double>& signalData, 
 }
 
 void NetworkManager::newConnection() {
+    qDebug() << "New connection established";
     if (clientSocket) {
         clientSocket->disconnectFromHost();
         delete clientSocket;
@@ -143,9 +171,17 @@ void NetworkManager::newConnection() {
     sendMessage(MessageType::ConnectionAccepted);
 }
 
+// void NetworkManager::readyRead() {
+//     QByteArray message = clientSocket->readAll();
+//     processMessage(message);
+// }
 void NetworkManager::readyRead() {
-    QByteArray message = clientSocket->readAll();
-    processMessage(message);
+    while (clientSocket->bytesAvailable() > 0) {
+        QByteArray message = clientSocket->readAll();
+        if (!message.isEmpty()) {
+            processIncomingData(message);
+        }
+    }
 }
 
 void NetworkManager::socketError(QAbstractSocket::SocketError error) {
@@ -236,4 +272,68 @@ void NetworkManager::sendMessage(MessageType type, const QByteArray& data) {
     }
 
     clientSocket->write(message);
+}
+
+///added
+// void NetworkManager::sendData(const QByteArray& data) {
+//     if (!connected || !clientSocket) return;
+//     clientSocket->write(data);
+// }
+// In NetworkManager.cpp, improve the sendData method:
+void NetworkManager::sendData(const QByteArray& data) {
+    if (!connected || !clientSocket) {
+        qDebug() << "Cannot send data: Not connected";
+        return;
+    }
+
+    if (data.isEmpty()) {
+        qDebug() << "Cannot send empty data";
+        return;
+    }
+
+    qint64 bytesWritten = clientSocket->write(data);
+    if (bytesWritten == -1) {
+        qDebug() << "Failed to write data:" << clientSocket->errorString();
+    } else if (bytesWritten < data.size()) {
+        qDebug() << "Partial data written:" << bytesWritten << "of" << data.size() << "bytes";
+    } else {
+        qDebug() << "Data sent successfully:" << bytesWritten << "bytes";
+    }
+
+    // Ensure data is actually sent
+    if (!clientSocket->waitForBytesWritten(5000)) {
+        qDebug() << "Data transmission timeout:" << clientSocket->errorString();
+    }
+}
+///added
+void NetworkManager::processIncomingData(const QByteArray& data) {
+    if (data.isEmpty()) return;
+
+    QString dataStr = QString::fromUtf8(data);
+    QString type;
+    QByteArray content;
+
+    // Parse the message type based on prefixes
+    if (dataStr.startsWith("CIRCUIT:")) {
+        type = "circuit";
+        content = data.mid(8); // Remove "CIRCUIT:" prefix
+    }
+    else if (dataStr.startsWith("VOLTAGE_NODE")) {
+        type = "voltage";
+        content = data;
+    }
+    else if (dataStr.startsWith("SIGNAL_INPUT:")) {
+        type = "signal";
+        content = data.mid(13); // Remove "SIGNAL_INPUT:" prefix
+    }
+    else if (dataStr.startsWith("COMPONENT:")) {
+        type = "component";
+        content = data.mid(10); // Remove "COMPONENT:" prefix
+    }
+    else {
+        type = "unknown";
+        content = data;
+    }
+
+    emit dataReceived(content, type);
 }

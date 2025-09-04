@@ -57,6 +57,8 @@ template <> constexpr inline auto NetworkManager::qt_create_metaobjectdata<qt_me
         "std::map<double,double>",
         "data",
         "signalName",
+        "dataReceived",
+        "type",
         "newConnection",
         "readyRead",
         "socketError",
@@ -81,16 +83,20 @@ template <> constexpr inline auto NetworkManager::qt_create_metaobjectdata<qt_me
         QtMocHelpers::SignalData<void(const std::map<double,double> &, const QString &)>(15, 2, QMC::AccessPublic, QMetaType::Void, {{
             { 0x80000000 | 16, 17 }, { QMetaType::QString, 18 },
         }}),
+        // Signal 'dataReceived'
+        QtMocHelpers::SignalData<void(const QByteArray &, const QString &)>(19, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::QByteArray, 17 }, { QMetaType::QString, 20 },
+        }}),
         // Slot 'newConnection'
-        QtMocHelpers::SlotData<void()>(19, 2, QMC::AccessPrivate, QMetaType::Void),
+        QtMocHelpers::SlotData<void()>(21, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'readyRead'
-        QtMocHelpers::SlotData<void()>(20, 2, QMC::AccessPrivate, QMetaType::Void),
+        QtMocHelpers::SlotData<void()>(22, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'socketError'
-        QtMocHelpers::SlotData<void(QAbstractSocket::SocketError)>(21, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { 0x80000000 | 22, 23 },
+        QtMocHelpers::SlotData<void(QAbstractSocket::SocketError)>(23, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { 0x80000000 | 24, 25 },
         }}),
         // Slot 'socketDisconnected'
-        QtMocHelpers::SlotData<void()>(24, 2, QMC::AccessPrivate, QMetaType::Void),
+        QtMocHelpers::SlotData<void()>(26, 2, QMC::AccessPrivate, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -118,17 +124,18 @@ void NetworkManager::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         case 1: _t->voltageSourceReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[8]))); break;
         case 2: _t->circuitFileReceived(); break;
         case 3: _t->signalDataReceived((*reinterpret_cast< std::add_pointer_t<std::map<double,double>>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 4: _t->newConnection(); break;
-        case 5: _t->readyRead(); break;
-        case 6: _t->socketError((*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[1]))); break;
-        case 7: _t->socketDisconnected(); break;
+        case 4: _t->dataReceived((*reinterpret_cast< std::add_pointer_t<QByteArray>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 5: _t->newConnection(); break;
+        case 6: _t->readyRead(); break;
+        case 7: _t->socketError((*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[1]))); break;
+        case 8: _t->socketDisconnected(); break;
         default: ;
         }
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
         switch (_id) {
         default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-        case 6:
+        case 7:
             switch (*reinterpret_cast<int*>(_a[1])) {
             default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
             case 0:
@@ -145,6 +152,8 @@ void NetworkManager::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         if (QtMocHelpers::indexOfMethod<void (NetworkManager::*)()>(_a, &NetworkManager::circuitFileReceived, 2))
             return;
         if (QtMocHelpers::indexOfMethod<void (NetworkManager::*)(const std::map<double,double> & , const QString & )>(_a, &NetworkManager::signalDataReceived, 3))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (NetworkManager::*)(const QByteArray & , const QString & )>(_a, &NetworkManager::dataReceived, 4))
             return;
     }
 }
@@ -168,14 +177,14 @@ int NetworkManager::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 8)
+        if (_id < 9)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 8;
+        _id -= 9;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 8)
+        if (_id < 9)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 8;
+        _id -= 9;
     }
     return _id;
 }
@@ -202,5 +211,11 @@ void NetworkManager::circuitFileReceived()
 void NetworkManager::signalDataReceived(const std::map<double,double> & _t1, const QString & _t2)
 {
     QMetaObject::activate<void>(this, &staticMetaObject, 3, nullptr, _t1, _t2);
+}
+
+// SIGNAL 4
+void NetworkManager::dataReceived(const QByteArray & _t1, const QString & _t2)
+{
+    QMetaObject::activate<void>(this, &staticMetaObject, 4, nullptr, _t1, _t2);
 }
 QT_WARNING_POP

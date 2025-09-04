@@ -33,6 +33,8 @@ private:
     QPushButton* connectButton;
     QPushButton* cancelButton;
     QLabel* hostLabel;
+
+    QString getLocalIP();
 };
 
 #endif // NETWORKDIALOG_H

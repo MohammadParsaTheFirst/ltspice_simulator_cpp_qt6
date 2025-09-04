@@ -41,6 +41,9 @@ public:
 
     NetworkRole getRole() const { return role; }
     bool isConnected() const { return connected; }
+    void sendData(const QByteArray& data);  ///added
+    void processIncomingData(const QByteArray& data);
+
 
 signals:
     void connectionStatusChanged(bool connected, const QString& message);
@@ -48,6 +51,7 @@ signals:
                               double value, bool isSinusoidal, double offset, double amplitude, double frequency);
     void circuitFileReceived();
     void signalDataReceived(const std::map<double, double>& data, const QString& signalName);
+    void dataReceived(const QByteArray& data, const QString& type); // Add this line
 
 private slots:
     void newConnection();

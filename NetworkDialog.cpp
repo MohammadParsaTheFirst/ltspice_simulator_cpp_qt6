@@ -2,11 +2,17 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFormLayout>
+#include <QHostAddress>
 #include <QIntValidator>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
+
+#include <QHostAddress>        // For QHostAddress
+#include <QAbstractSocket>     // For QAbstractSocket::IPv4Protocol
+#include <QNetworkInterface>   // For QNetworkInterface::allAddresses
+
 
 NetworkDialog::NetworkDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("Network Configuration");
@@ -26,7 +32,7 @@ NetworkDialog::NetworkDialog(QWidget* parent) : QDialog(parent) {
     // Host input
     QFormLayout* formLayout = new QFormLayout();
     hostLabel = new QLabel("Server Host:", this);
-    hostEdit = new QLineEdit("localhost", this);
+    hostEdit = new QLineEdit("127.0.0.1", this);//"localhost", this);
     formLayout->addRow(hostLabel, hostEdit);
     mainLayout->addLayout(formLayout);
 
@@ -34,6 +40,13 @@ NetworkDialog::NetworkDialog(QWidget* parent) : QDialog(parent) {
     portEdit = new QLineEdit("12345", this);
     portEdit->setValidator(new QIntValidator(1024, 65535, this));
     formLayout->addRow("Port:", portEdit);
+
+    // Add local IP info for convenience
+    QLabel* ipInfo = new QLabel(this);
+    QString localIp = getLocalIP();
+    ipInfo->setText("Your local IP: " + localIp);
+    ipInfo->setStyleSheet("color: gray; font-size: 10px;");
+    formLayout->addRow("", ipInfo);
 
     // Buttons
     QHBoxLayout* buttonLayout = new QHBoxLayout();
@@ -69,4 +82,19 @@ void NetworkDialog::toggleServerClient() {
     bool isClient = clientRadio->isChecked();
     hostLabel->setEnabled(isClient);
     hostEdit->setEnabled(isClient);
+}
+
+// Add helper function to get local IP
+QString NetworkDialog::getLocalIP() {
+    QString localIp = "127.0.0.1";
+    QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
+
+    for (const QHostAddress &address : ipAddressesList) {
+        if (address.protocol() == QAbstractSocket::IPv4Protocol &&
+            address != QHostAddress(QHostAddress::LocalHost)) {
+            localIp = address.toString();
+            break;
+            }
+    }
+    return localIp;
 }

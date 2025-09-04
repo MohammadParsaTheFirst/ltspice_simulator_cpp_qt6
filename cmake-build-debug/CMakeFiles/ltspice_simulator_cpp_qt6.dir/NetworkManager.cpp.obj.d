@@ -688,4 +688,16 @@ CMakeFiles/ltspice_simulator_cpp_qt6.dir/NetworkManager.cpp.obj: \
  C:/Qt/6.9.1/mingw_64/include/QtCore/QFile \
  C:/Qt/6.9.1/mingw_64/include/QtCore/qfile.h \
  C:/Qt/6.9.1/mingw_64/include/QtCore/QFileInfo \
- C:/Qt/6.9.1/mingw_64/include/QtCore/qfileinfo.h
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qfileinfo.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/QNetworkProxy \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qnetworkproxy.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qnetworkrequest.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qhttpheaders.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/QSharedDataPointer \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qshareddata.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/QString \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/QUrl \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qurl.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/QVariant \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qvariant.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/q26numeric.h

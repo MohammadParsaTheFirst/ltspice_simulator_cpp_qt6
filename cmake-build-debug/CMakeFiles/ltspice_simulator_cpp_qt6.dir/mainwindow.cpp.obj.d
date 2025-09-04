@@ -864,4 +864,8 @@ CMakeFiles/ltspice_simulator_cpp_qt6.dir/mainwindow.cpp.obj: \
  C:/Program\ Files/JetBrains/CLion\ 2024.3.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/bits/atomic_futex.h \
  C:\Users\USER\CLionProjects\ltspice_simulator_cpp_qt6\NetworkDialog.h \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/QButtonGroup \
- C:/Qt/6.9.1/mingw_64/include/QtWidgets/qbuttongroup.h
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qbuttongroup.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/QFile \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qfile.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/QTextStream \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qtextstream.h

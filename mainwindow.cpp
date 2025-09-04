@@ -1,5 +1,11 @@
 #include "mainwindow.h"
 #include <QDir>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QInputDialog>
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
 
 QString getSubcircuitLibraryPath() {
     QString appPath = QCoreApplication::applicationDirPath();
@@ -22,6 +28,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
             this, &MainWindow::onCircuitFileReceived);
     connect(networkManager, &NetworkManager::signalDataReceived,
             this, &MainWindow::onSignalDataReceived);
+    connect(sendAction, &QAction::triggered, this, &MainWindow::hSendData); //added
+
+    connect(networkManager, &NetworkManager::dataReceived, this, &MainWindow::onDataReceived); // Add this line
 
     loadSubcircuitsFromLibrary();
     setWindowIcon(QIcon(":/icon.png"));
@@ -228,6 +237,7 @@ void MainWindow::initializeActions() {
     subcircuitLibraryAction = new QAction("Open Subcircuit Library", this);
     quitAction = new QAction("Exit", this);
     networkAction = new QAction(QIcon(":/icon/icons/network.png"), "Network", this);  // Add this
+    sendAction = new QAction(QIcon(":/icon/icons/send.png"), "Send", this); // added
 }
 
 void MainWindow::implementMenuBar() {
@@ -295,6 +305,8 @@ void MainWindow::implementToolBar() {
     mainToolBar->addAction(labelAction);
     mainToolBar->addAction(deleteModeAction);
     mainToolBar->addAction(networkAction);  // Add network action to toolbar
+    mainToolBar->addAction(networkAction); //added
+    mainToolBar->addAction(sendAction); // added
 
     mainToolBar->setIconSize(QSize(40, 40));
 }
@@ -316,23 +328,53 @@ void MainWindow::shortcutRunner() {
     labelAction->setShortcut(QKeySequence(Qt::Key_T));
     deleteModeAction->setShortcuts({QKeySequence(Qt::Key_Backspace), QKeySequence(Qt::Key_Delete)});
     networkAction->setShortcut(QKeySequence(Qt::Key_N));  // Add network shortcut
+    sendAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Z)); // added for sending
 }
 
 
 void MainWindow::hNetworkConnection() {
     NetworkDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
-        if (dialog.isServer()) {
-            if (networkManager->startServer(dialog.getPort())) {
-                statusBar()->showMessage("Server started on port " + QString::number(dialog.getPort()));
+        try {
+            if (dialog.isServer()) {
+                quint16 port = dialog.getPort();
+                if (networkManager->startServer(port)) {
+                    statusBar()->showMessage("Server started on port " + QString::number(port));
+                } else {
+                    QMessageBox::warning(this, "Server Error",
+                                        "Failed to start server. Check if port is available.");
+                }
+            } else {
+                QString host = dialog.getHost();
+                quint16 port = dialog.getPort();
+
+                if (networkManager->connectToServer(host, port)) {
+                    statusBar()->showMessage("Connecting to " + host + ":" + QString::number(port));
+                } else {
+                    QMessageBox::warning(this, "Connection Error",
+                                        "Failed to connect to server. Check host/port and try again.");
+                }
             }
-        } else {
-            if (networkManager->connectToServer(dialog.getHost(), dialog.getPort())) {
-                statusBar()->showMessage("Connecting to " + dialog.getHost() + ":" + QString::number(dialog.getPort()));
-            }
+        } catch (const std::exception& e) {
+            QMessageBox::critical(this, "Network Error",
+                                 QString("Network operation failed: %1").arg(e.what()));
         }
     }
 }
+// void MainWindow::hNetworkConnection() {
+//     NetworkDialog dialog(this);
+//     if (dialog.exec() == QDialog::Accepted) {
+//         if (dialog.isServer()) {
+//             if (networkManager->startServer(dialog.getPort())) {
+//                 statusBar()->showMessage("Server started on port " + QString::number(dialog.getPort()));
+//             }
+//         } else {
+//             if (networkManager->connectToServer(dialog.getHost(), dialog.getPort())) {
+//                 statusBar()->showMessage("Connecting to " + dialog.getHost() + ":" + QString::number(dialog.getPort()));
+//             }
+//         }
+//     }
+// }
 
 void MainWindow::onNetworkStatusChanged(bool connected, const QString& message) {
     statusBar()->showMessage(message);
@@ -378,4 +420,165 @@ void MainWindow::onSignalDataReceived(const std::map<double, double>& data, cons
     plotWindow->addSeries(data, signalName);
     plotWindow->show();
     statusBar()->showMessage("Signal data received: " + signalName);
+}
+
+
+
+////////////////
+
+void MainWindow::saveProject() {
+    // Implementation that saves user actions to project.log.txt
+    QFile file("project.log.txt");
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        // Write all user actions to the file
+        // This should match your existing logging mechanism
+        file.close();
+    }
+}
+
+void MainWindow::hSendData() {
+    // Check if connected
+    if (!networkManager->isConnected()) {
+        QMessageBox::warning(this, "Error", "You are not connected to a server or client.");
+        return;
+    }
+
+    // Create send options dialog
+    QDialog dialog(this);
+    dialog.setWindowTitle("Send Data");
+    dialog.setMinimumWidth(300);
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+    QLabel* label = new QLabel("What do you want to do?", &dialog);
+    QComboBox* comboBox = new QComboBox(&dialog);
+    comboBox->addItem("Send voltage source to a specific node");
+    comboBox->addItem("Send the whole circuit file");
+    comboBox->addItem("Send a signal as an input to a circuit");
+    comboBox->addItem("Send component to circuit");
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+
+    layout->addWidget(label);
+    layout->addWidget(comboBox);
+    layout->addWidget(buttonBox);
+
+    connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    QString selectedOption = comboBox->currentText();
+    QByteArray dataToSend;
+
+    try {
+        if (selectedOption == "Send voltage source to a specific node") {
+            bool ok;
+            QString nodeName = QInputDialog::getText(this, "Node Name", "Enter node name:", QLineEdit::Normal, "", &ok);
+            if (!ok || nodeName.isEmpty()) return;
+
+            double voltage = QInputDialog::getDouble(this, "Voltage Value", "Enter voltage value:", 0, -1000, 1000, 2, &ok);
+            if (!ok) return;
+
+            QString message = QString("VOLTAGE_NODE %1 %2").arg(nodeName).arg(voltage);
+            dataToSend = message.toUtf8();
+        }
+        else if (selectedOption == "Send the whole circuit file") {
+            // Ensure project is saved first
+            saveProject();
+
+            QFile file("project.log.txt");
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::warning(this, "Error", "Could not open circuit file for reading.");
+                return;
+            }
+
+            dataToSend = "CIRCUIT:" + file.readAll();
+            file.close();
+        }
+        else if (selectedOption == "Send a signal as an input to a circuit") {
+            QString fileName = QFileDialog::getOpenFileName(this, "Select Signal File",
+                                                          QCoreApplication::applicationDirPath(),
+                                                          "Text Files (*.txt);;All Files (*)");
+            if (fileName.isEmpty()) return;
+
+            QFile file(fileName);
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::warning(this, "Error", "Could not open signal file.");
+                return;
+            }
+
+            dataToSend = "SIGNAL_INPUT:" + file.readAll();
+            file.close();
+        }
+        else if (selectedOption == "Send component to circuit") {
+            // Example implementation - you might want to expand this
+            QString componentData = "COMPONENT:Basic implementation - extend as needed";
+            dataToSend = componentData.toUtf8();
+        }
+
+        // Send the data
+        networkManager->sendData(dataToSend);
+        statusBar()->showMessage("Data sent successfully", 3000);
+
+    } catch (const std::exception& e) {
+        QMessageBox::warning(this, "Error", QString("Failed to send data: %1").arg(e.what()));
+    }
+}
+
+
+// Implement the data received handler:
+void MainWindow::onDataReceived(const QByteArray& data, const QString& type) {
+    QString message;
+
+    if (type == "circuit") {
+        // Save received circuit data
+        QFile file("received_circuit.log.txt");
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(data);
+            file.close();
+            message = "Circuit file received and saved";
+
+            // Optional: Automatically load the received circuit
+            // loadProject("received_circuit.log.txt");
+        } else {
+            message = "Failed to save received circuit file";
+        }
+    }
+    else if (type == "voltage") {
+        QString voltageData = QString::fromUtf8(data);
+        QStringList parts = voltageData.split(' ');
+        if (parts.size() >= 3 && parts[0] == "VOLTAGE_NODE") {
+            QString nodeName = parts[1];
+            double voltage = parts[2].toDouble();
+            message = QString("Voltage source received: %1V at node %2").arg(voltage).arg(nodeName);
+
+            // Here you would typically add the voltage source to your circuit
+            //circuit.addComponent(Component::Type::VOLTAGE_SOURCE, "name", "node1", "node2", "value", const std::vector<double>& numericParams, const std::vector<std::string>& stringParams, bool isSinusoidal) {
+ //addVoltageSource(nodeName, voltage);
+        }
+    }
+    else if (type == "signal") {
+        QFile file("received_signal.txt");
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(data);
+            file.close();
+            message = "Signal data received and saved";
+        } else {
+            message = "Failed to save received signal data";
+        }
+    }
+    else if (type == "component") {
+        message = "Component data received: " + QString::fromUtf8(data);
+        // Handle component data
+    }
+    else {
+        message = "Unknown data type received: " + QString::fromUtf8(data);
+    }
+
+    // Show notification
+    statusBar()->showMessage(message, 5000);
+    QMessageBox::information(this, "Data Received", message);
 }

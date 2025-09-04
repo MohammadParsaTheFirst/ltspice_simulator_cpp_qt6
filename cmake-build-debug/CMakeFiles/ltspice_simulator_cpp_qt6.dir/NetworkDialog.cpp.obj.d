@@ -435,6 +435,13 @@ CMakeFiles/ltspice_simulator_cpp_qt6.dir/NetworkDialog.cpp.obj: \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/qformlayout.h \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/QLayout \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/qlayout.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/QHostAddress \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qhostaddress.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qtnetworkglobal.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qtnetwork-config.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qtnetworkexports.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qabstractsocket.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qiodevice.h \
  C:/Qt/6.9.1/mingw_64/include/QtGui/QIntValidator \
  C:/Qt/6.9.1/mingw_64/include/QtGui/qvalidator.h \
  C:/Qt/6.9.1/mingw_64/include/QtCore/qregularexpression.h \
@@ -443,7 +450,6 @@ CMakeFiles/ltspice_simulator_cpp_qt6.dir/NetworkDialog.cpp.obj: \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/qlabel.h \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/qframe.h \
  C:/Qt/6.9.1/mingw_64/include/QtGui/qpicture.h \
- C:/Qt/6.9.1/mingw_64/include/QtCore/qiodevice.h \
  C:/Qt/6.9.1/mingw_64/include/QtGui/qtextdocument.h \
  C:/Qt/6.9.1/mingw_64/include/QtCore/qurl.h \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/QLineEdit \
@@ -456,4 +462,9 @@ CMakeFiles/ltspice_simulator_cpp_qt6.dir/NetworkDialog.cpp.obj: \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/qpushbutton.h \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/qabstractbutton.h \
  C:/Qt/6.9.1/mingw_64/include/QtWidgets/QRadioButton \
- C:/Qt/6.9.1/mingw_64/include/QtWidgets/qradiobutton.h
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qradiobutton.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/QAbstractSocket \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qabstractsocket.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/QNetworkInterface \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qnetworkinterface.h \
+ C:/Qt/6.9.1/mingw_64/include/QtNetwork/qhostaddress.h

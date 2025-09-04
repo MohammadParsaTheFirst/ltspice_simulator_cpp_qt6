@@ -40,6 +40,7 @@ private:
     void setupSchematicState(const QString& projectName = "Draft.asc");
 
     // Some items in menu bar to disable and enabling them
+    QAction* sendAction; // Added
     QAction* settingsAction;
     QAction* newSchematicAction;
     QAction* saveAction;
@@ -63,6 +64,7 @@ private:
 
     private slots:
         void hNewSchematic();
+    void hSendData(); // Added
     void hShowSettings();
     void hSaveProject();
     void hOpenProject();
@@ -72,7 +74,7 @@ private:
                                double value, bool isSinusoidal, double offset, double amplitude, double frequency);     // Add this slot
     void onCircuitFileReceived();                                                                                       // Add this slot
     void onSignalDataReceived(const std::map<double, double>& data, const QString& signalName);                         // Add this slot
-
+    void onDataReceived(const QByteArray& data, const QString& type); // Add this line
 
 public:
     MainWindow(QWidget* parent = Q_NULLPTR);
@@ -83,6 +85,7 @@ public:
     void implementMenuBar();
     void implementToolBar();
     void shortcutRunner();
+    void saveProject();
 
     void loadSubcircuitsFromLibrary();
 };
