@@ -1,10 +1,10 @@
 #include "NetworkManager.h"
 #include <QHostAddress>
 #include <QFile>
+#include <QFileDialog>
 #include <QTcpSocket>
 #include <QFileInfo>
 #include <QNetworkProxy>
-
 
 NetworkManager::NetworkManager(Circuit* circuit, QObject* parent)
     : QObject(parent), circuit(circuit), role(NetworkRole::None), connected(false) {
@@ -100,57 +100,10 @@ void NetworkManager::disconnect() {
     emit connectionStatusChanged(false, "Disconnected");
 }
 
-void NetworkManager::sendVoltageSource(const QString& name, const QString& node1, const QString& node2,
-                                      double value, bool isSinusoidal,
-                                      double offset, double amplitude, double frequency) {
-    if (!connected) return;
 
-    QByteArray data;
-    QDataStream stream(&data, QIODevice::WriteOnly);
-    stream.setVersion(QDataStream::Qt_6_5);
 
-    stream << name << node1 << node2 << value << isSinusoidal;
-    if (isSinusoidal) {
-        stream << offset << amplitude << frequency;
-    }
 
-    sendMessage(MessageType::VoltageSource, data);
-}
 
-void NetworkManager::sendCircuitFile() {
-    if (!connected) return;
-
-    // Save circuit to temporary file
-    QString tempFile = QCoreApplication::applicationDirPath() + "/temp_circuit.psp";
-    circuit->saveToFile(tempFile);
-
-    QFile file(tempFile);
-    if (!file.open(QIODevice::ReadOnly)) {
-        return;
-    }
-
-    QByteArray circuitData = file.readAll();
-    file.close();
-    QFile::remove(tempFile);
-
-    sendMessage(MessageType::CircuitFile, circuitData);
-}
-
-void NetworkManager::sendSignalData(const std::map<double, double>& signalData, const QString& signalName) {
-    if (!connected) return;
-
-    QByteArray data;
-    QDataStream stream(&data, QIODevice::WriteOnly);
-    stream.setVersion(QDataStream::Qt_6_5);
-
-    stream << signalName;
-    stream << static_cast<quint32>(signalData.size());
-    for (const auto& point : signalData) {
-        stream << point.first << point.second;
-    }
-
-    sendMessage(MessageType::SignalData, data);
-}
 
 void NetworkManager::newConnection() {
     qDebug() << "New connection established";
@@ -183,6 +136,10 @@ void NetworkManager::readyRead() {
         }
     }
 }
+// void NetworkManager::readyRead() {
+//     QByteArray message = clientSocket->readAll();
+//     processMessage(message);
+// }
 
 void NetworkManager::socketError(QAbstractSocket::SocketError error) {
     Q_UNUSED(error);
@@ -199,64 +156,35 @@ void NetworkManager::processMessage(const QByteArray& message) {
     QDataStream stream(message);
     stream.setVersion(QDataStream::Qt_6_5);
 
-    quint32 type;
-    stream >> type;
-    MessageType msgType = static_cast<MessageType>(type);
+    QString messageType;
+    stream >> messageType;
 
-    switch (msgType) {
-    case MessageType::VoltageSource: {
-        QString name, node1, node2;
-        double value;
-        bool isSinusoidal;
-        double offset = 0.0, amplitude = 0.0, frequency = 0.0;
+    if (messageType == "FILE") {
+        QString fileName;
+        QByteArray fileData;
+        stream >> fileName >> fileData;
 
-        stream >> name >> node1 >> node2 >> value >> isSinusoidal;
-        if (isSinusoidal) {
-            stream >> offset >> amplitude >> frequency;
+        // Ask user where to save the file
+        QString savePath = QFileDialog::getSaveFileName(
+            nullptr,
+            "Save Received File",
+            QCoreApplication::applicationDirPath() + "/" + fileName,
+            "All Files (*)"
+        );
+
+        if (!savePath.isEmpty()) {
+            QFile file(savePath);
+            if (file.open(QIODevice::WriteOnly)) {
+                file.write(fileData);
+                file.close();
+                qDebug() << "File received and saved:" << savePath;
+
+                // Emit signal for main window
+                emit dataReceived(fileData, "file");
+            }
         }
-
-        emit voltageSourceReceived(name, node1, node2, value, isSinusoidal, offset, amplitude, frequency);
-        break;
     }
-    case MessageType::CircuitFile: {
-        QByteArray circuitData = message.mid(sizeof(quint32));
-        QString tempFile = QCoreApplication::applicationDirPath() + "/received_circuit.psp";
-
-        QFile file(tempFile);
-        if (file.open(QIODevice::WriteOnly)) {
-            file.write(circuitData);
-            file.close();
-            circuit->loadFromFile(tempFile);
-            QFile::remove(tempFile);
-            emit circuitFileReceived();
-        }
-        break;
-    }
-    case MessageType::SignalData: {
-        QString signalName;
-        quint32 pointCount;
-        std::map<double, double> signalData;
-
-        stream >> signalName >> pointCount;
-        for (quint32 i = 0; i < pointCount; ++i) {
-            double x, y;
-            stream >> x >> y;
-            signalData[x] = y;
-        }
-
-        emit signalDataReceived(signalData, signalName);
-        break;
-    }
-    case MessageType::ConnectionAccepted:
-        emit connectionStatusChanged(true, "Connection accepted by server");
-        break;
-    case MessageType::ConnectionRejected:
-        emit connectionStatusChanged(false, "Connection rejected by server");
-        disconnect();
-        break;
-    default:
-        break;
-    }
+    // ... rest of your existing message processing code
 }
 
 void NetworkManager::sendMessage(MessageType type, const QByteArray& data) {
@@ -374,3 +302,38 @@ void NetworkManager::processIncomingData(const QByteArray& data) {
 //
 //     emit dataReceived(content, type);
 // }
+
+
+
+// Add this method implementation
+void NetworkManager::sendFile(const QString& filePath) {
+    if (!connected || !clientSocket) {
+        qWarning() << "Cannot send file: Not connected to any client/server";
+        return;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Cannot open file for reading:" << filePath;
+        return;
+    }
+
+    QFileInfo fileInfo(filePath);
+    QString fileName = fileInfo.fileName();
+    QByteArray fileData = file.readAll();
+    file.close();
+
+    // Create message structure: FILE:<filename>:<filedata>
+    QByteArray message;
+    QDataStream stream(&message, QIODevice::WriteOnly);
+    stream.setVersion(QDataStream::Qt_6_5);
+
+    stream << QString("FILE") << fileName << fileData;
+
+    // Send the message
+    if (clientSocket->write(message) == -1) {
+        qWarning() << "Failed to send file:" << clientSocket->errorString();
+    } else {
+        qDebug() << "File sent successfully:" << fileName << "Size:" << fileData.size() << "bytes";
+    }
+}

@@ -61,10 +61,12 @@ private:
     QAction* subcircuitLibraryAction;
     QAction* quitAction;
     QAction* networkAction;  // Add this member
+    QAction* sendFileAction;
 
     private slots:
         void hNewSchematic();
-    void hSendData(); // Added
+    void hSendFile();
+    //void hSendData(); // Added
     void hShowSettings();
     void hSaveProject();
     void hOpenProject();
@@ -74,7 +76,7 @@ private:
                                double value, bool isSinusoidal, double offset, double amplitude, double frequency);     // Add this slot
     void onCircuitFileReceived();                                                                                       // Add this slot
     void onSignalDataReceived(const std::map<double, double>& data, const QString& signalName);                         // Add this slot
-    void onDataReceived(const QByteArray& data, const QString& type); // Add this line
+    //void onDataReceived(const QByteArray& data, const QString& type); // Add this line
 
 public:
     MainWindow(QWidget* parent = Q_NULLPTR);

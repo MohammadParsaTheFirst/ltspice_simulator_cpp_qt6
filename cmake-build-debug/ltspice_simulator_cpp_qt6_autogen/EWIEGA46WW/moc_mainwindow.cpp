@@ -42,7 +42,7 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "MainWindow",
         "hNewSchematic",
         "",
-        "hSendData",
+        "hSendFile",
         "hShowSettings",
         "hSaveProject",
         "hOpenProject",
@@ -63,15 +63,13 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "onSignalDataReceived",
         "std::map<double,double>",
         "data",
-        "signalName",
-        "onDataReceived",
-        "type"
+        "signalName"
     };
 
     QtMocHelpers::UintData qt_methods {
         // Slot 'hNewSchematic'
         QtMocHelpers::SlotData<void()>(1, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'hSendData'
+        // Slot 'hSendFile'
         QtMocHelpers::SlotData<void()>(3, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'hShowSettings'
         QtMocHelpers::SlotData<void()>(4, 2, QMC::AccessPrivate, QMetaType::Void),
@@ -95,10 +93,6 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         // Slot 'onSignalDataReceived'
         QtMocHelpers::SlotData<void(const std::map<double,double> &, const QString &)>(21, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { 0x80000000 | 22, 23 }, { QMetaType::QString, 24 },
-        }}),
-        // Slot 'onDataReceived'
-        QtMocHelpers::SlotData<void(const QByteArray &, const QString &)>(25, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { QMetaType::QByteArray, 23 }, { QMetaType::QString, 26 },
         }}),
     };
     QtMocHelpers::UintData qt_properties {
@@ -124,7 +118,7 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
         case 0: _t->hNewSchematic(); break;
-        case 1: _t->hSendData(); break;
+        case 1: _t->hSendFile(); break;
         case 2: _t->hShowSettings(); break;
         case 3: _t->hSaveProject(); break;
         case 4: _t->hOpenProject(); break;
@@ -133,7 +127,6 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 7: _t->onVoltageSourceReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[8]))); break;
         case 8: _t->onCircuitFileReceived(); break;
         case 9: _t->onSignalDataReceived((*reinterpret_cast< std::add_pointer_t<std::map<double,double>>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 10: _t->onDataReceived((*reinterpret_cast< std::add_pointer_t<QByteArray>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
         default: ;
         }
     }
@@ -158,14 +151,14 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 11)
+        if (_id < 10)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 11;
+        _id -= 10;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 11)
+        if (_id < 10)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 11;
+        _id -= 10;
     }
     return _id;
 }

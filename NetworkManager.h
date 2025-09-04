@@ -15,9 +15,10 @@ enum class NetworkRole {
 };
 
 enum class MessageType {
-    VoltageSource,
-    CircuitFile,
-    SignalData,
+    // VoltageSource,
+    // CircuitFile,
+    // SignalData,
+    File,
     ConnectionRequest,
     ConnectionAccepted,
     ConnectionRejected
@@ -33,15 +34,12 @@ public:
     bool startServer(quint16 port);
     bool connectToServer(const QString& host, quint16 port);
     void disconnect();
-    void sendVoltageSource(const QString& name, const QString& node1, const QString& node2,
-                          double value, bool isSinusoidal = false,
-                          double offset = 0.0, double amplitude = 0.0, double frequency = 0.0);
-    void sendCircuitFile();
-    void sendSignalData(const std::map<double, double>& signalData, const QString& signalName);
+
 
     NetworkRole getRole() const { return role; }
     bool isConnected() const { return connected; }
     void sendData(const QByteArray& data);  ///added
+    void sendFile(const QString& filePath); ///////
     void processIncomingData(const QByteArray& data);
 
 

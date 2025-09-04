@@ -687,6 +687,34 @@ CMakeFiles/ltspice_simulator_cpp_qt6.dir/NetworkManager.cpp.obj: \
  C:/Qt/6.9.1/mingw_64/include/QtNetwork/qhostaddress.h \
  C:/Qt/6.9.1/mingw_64/include/QtCore/QFile \
  C:/Qt/6.9.1/mingw_64/include/QtCore/qfile.h \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/QFileDialog \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qfiledialog.h \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qtwidgetsglobal.h \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qtwidgets-config.h \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qtwidgetsexports.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qdir.h \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qdialog.h \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qwidget.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qaction.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qicon.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qpixmap.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qpaintdevice.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qcolor.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qrgb.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qrgba64.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qimage.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qpixelformat.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qtransform.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qpalette.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qbrush.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qfont.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qendian.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qfontmetrics.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qfontinfo.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qfontvariableaxis.h \
+ C:/Qt/6.9.1/mingw_64/include/QtWidgets/qsizepolicy.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qcursor.h \
+ C:/Qt/6.9.1/mingw_64/include/QtGui/qbitmap.h \
  C:/Qt/6.9.1/mingw_64/include/QtCore/QFileInfo \
  C:/Qt/6.9.1/mingw_64/include/QtCore/qfileinfo.h \
  C:/Qt/6.9.1/mingw_64/include/QtNetwork/QNetworkProxy \
