@@ -7,6 +7,9 @@
 #include <QFile>
 #include <QTextStream>
 
+#include <QDebug>
+#include <QFileDialog>
+
 QString getSubcircuitLibraryPath() {
     QString appPath = QCoreApplication::applicationDirPath();
     QDir dir(appPath + "/lib");
@@ -437,148 +440,383 @@ void MainWindow::saveProject() {
     }
 }
 
+// Replace the entire hSendData method in mainwindow.cpp with this corrected version:
 void MainWindow::hSendData() {
+    qDebug() << "Send button clicked";
+
     // Check if connected
     if (!networkManager->isConnected()) {
         QMessageBox::warning(this, "Error", "You are not connected to a server or client.");
         return;
     }
 
+    qDebug() << "Network is connected, showing send dialog";
+
     // Create send options dialog
     QDialog dialog(this);
     dialog.setWindowTitle("Send Data");
-    dialog.setMinimumWidth(300);
+    dialog.setMinimumWidth(350);
+    dialog.setMinimumHeight(200);
 
     QVBoxLayout* layout = new QVBoxLayout(&dialog);
-    QLabel* label = new QLabel("What do you want to do?", &dialog);
+    QLabel* label = new QLabel("What do you want to send?", &dialog);
+    label->setStyleSheet("font-weight: bold; font-size: 12px;");
+
     QComboBox* comboBox = new QComboBox(&dialog);
-    comboBox->addItem("Send voltage source to a specific node");
     comboBox->addItem("Send the whole circuit file");
-    comboBox->addItem("Send a signal as an input to a circuit");
-    comboBox->addItem("Send component to circuit");
+    comboBox->addItem("Send a signal file");
+    comboBox->addItem("Send voltage source to node");
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
 
     layout->addWidget(label);
     layout->addWidget(comboBox);
     layout->addWidget(buttonBox);
+    layout->setSpacing(15);
 
     connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
+    // Show the dialog modally
     if (dialog.exec() != QDialog::Accepted) {
+        qDebug() << "Send dialog cancelled";
         return;
     }
 
     QString selectedOption = comboBox->currentText();
+    qDebug() << "Selected option:" << selectedOption;
+
     QByteArray dataToSend;
+    QString prefix;
 
     try {
-        if (selectedOption == "Send voltage source to a specific node") {
-            bool ok;
-            QString nodeName = QInputDialog::getText(this, "Node Name", "Enter node name:", QLineEdit::Normal, "", &ok);
-            if (!ok || nodeName.isEmpty()) return;
-
-            double voltage = QInputDialog::getDouble(this, "Voltage Value", "Enter voltage value:", 0, -1000, 1000, 2, &ok);
-            if (!ok) return;
-
-            QString message = QString("VOLTAGE_NODE %1 %2").arg(nodeName).arg(voltage);
-            dataToSend = message.toUtf8();
-        }
-        else if (selectedOption == "Send the whole circuit file") {
-            // Ensure project is saved first
-            saveProject();
-
-            QFile file("project.log.txt");
-            if (!file.open(QIODevice::ReadOnly)) {
-                QMessageBox::warning(this, "Error", "Could not open circuit file for reading.");
+        if (selectedOption == "Send the whole circuit file") {
+            // Ensure we have a current project
+            if (currentProjectPath.isEmpty()) {
+                QMessageBox::warning(this, "Error", "No circuit project is currently open.");
                 return;
             }
 
-            dataToSend = "CIRCUIT:" + file.readAll();
+            // Load the circuit file content
+            QFile file(currentProjectPath);
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::warning(this, "Error", "Could not open circuit file: " + currentProjectPath);
+                return;
+            }
+
+            dataToSend = file.readAll();
             file.close();
+            prefix = "CIRCUIT:";
+
+            qDebug() << "Circuit file loaded, size:" << dataToSend.size() << "bytes";
         }
-        else if (selectedOption == "Send a signal as an input to a circuit") {
-            QString fileName = QFileDialog::getOpenFileName(this, "Select Signal File",
-                                                          QCoreApplication::applicationDirPath(),
-                                                          "Text Files (*.txt);;All Files (*)");
-            if (fileName.isEmpty()) return;
+        else if (selectedOption == "Send a signal file") {
+            QString fileName = QFileDialog::getOpenFileName(
+                this,
+                "Select Signal File",
+                QCoreApplication::applicationDirPath(),
+                "Text Files (*.txt);;All Files (*)"
+            );
+
+            if (fileName.isEmpty()) {
+                qDebug() << "No signal file selected";
+                return;
+            }
 
             QFile file(fileName);
             if (!file.open(QIODevice::ReadOnly)) {
-                QMessageBox::warning(this, "Error", "Could not open signal file.");
+                QMessageBox::warning(this, "Error", "Could not open signal file: " + fileName);
                 return;
             }
 
-            dataToSend = "SIGNAL_INPUT:" + file.readAll();
+            dataToSend = file.readAll();
             file.close();
+            prefix = "SIGNAL:";
+
+            qDebug() << "Signal file loaded, size:" << dataToSend.size() << "bytes";
         }
-        else if (selectedOption == "Send component to circuit") {
-            // Example implementation - you might want to expand this
-            QString componentData = "COMPONENT:Basic implementation - extend as needed";
-            dataToSend = componentData.toUtf8();
+        else if (selectedOption == "Send voltage source to node") {
+            bool ok;
+            QString nodeName = QInputDialog::getText(
+                this,
+                "Node Name",
+                "Enter node name:",
+                QLineEdit::Normal,
+                "N1",
+                &ok
+            );
+
+            if (!ok || nodeName.isEmpty()) {
+                qDebug() << "No node name entered";
+                return;
+            }
+
+            double voltage = QInputDialog::getDouble(
+                this,
+                "Voltage Value",
+                "Enter voltage value:",
+                0, -1000, 1000, 2, &ok
+            );
+
+            if (!ok) {
+                qDebug() << "No voltage value entered";
+                return;
+            }
+
+            QString message = QString("VOLTAGE %1 %2").arg(nodeName).arg(voltage);
+            dataToSend = message.toUtf8();
+            prefix = "VOLTAGE:";
+
+            qDebug() << "Voltage data prepared:" << message;
         }
 
-        // Send the data
-        networkManager->sendData(dataToSend);
-        statusBar()->showMessage("Data sent successfully", 3000);
+        // Prepend the prefix and send the data
+        QByteArray finalData = prefix.toUtf8() + dataToSend;
+        networkManager->sendData(finalData);
+
+        statusBar()->showMessage("Data sent successfully: " + selectedOption, 3000);
+        qDebug() << "Data sent successfully, total size:" << finalData.size() << "bytes";
 
     } catch (const std::exception& e) {
         QMessageBox::warning(this, "Error", QString("Failed to send data: %1").arg(e.what()));
+        qDebug() << "Error sending data:" << e.what();
     }
 }
+
+// void MainWindow::hSendData() {
+//     // Check if connected
+//     if (!networkManager->isConnected()) {
+//         QMessageBox::warning(this, "Error", "You are not connected to a server or client.");
+//         return;
+//     }
+//
+//     // Create send options dialog
+//     QDialog dialog(this);
+//     dialog.setWindowTitle("Send Data");
+//     dialog.setMinimumWidth(300);
+//
+//     QVBoxLayout* layout = new QVBoxLayout(&dialog);
+//     QLabel* label = new QLabel("What do you want to do?", &dialog);
+//     QComboBox* comboBox = new QComboBox(&dialog);
+//     comboBox->addItem("Send voltage source to a specific node");
+//     comboBox->addItem("Send the whole circuit file");
+//     comboBox->addItem("Send a signal as an input to a circuit");
+//     comboBox->addItem("Send component to circuit");
+//
+//     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+//
+//     layout->addWidget(label);
+//     layout->addWidget(comboBox);
+//     layout->addWidget(buttonBox);
+//
+//     connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+//     connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+//
+//     if (dialog.exec() != QDialog::Accepted) {
+//         return;
+//     }
+//
+//     QString selectedOption = comboBox->currentText();
+//     QByteArray dataToSend;
+//
+//     try {
+//         if (selectedOption == "Send voltage source to a specific node") {
+//             bool ok;
+//             QString nodeName = QInputDialog::getText(this, "Node Name", "Enter node name:", QLineEdit::Normal, "", &ok);
+//             if (!ok || nodeName.isEmpty()) return;
+//
+//             double voltage = QInputDialog::getDouble(this, "Voltage Value", "Enter voltage value:", 0, -1000, 1000, 2, &ok);
+//             if (!ok) return;
+//
+//             QString message = QString("VOLTAGE_NODE %1 %2").arg(nodeName).arg(voltage);
+//             dataToSend = message.toUtf8();
+//         }
+//         else if (selectedOption == "Send the whole circuit file") {
+//             // Ensure project is saved first
+//             saveProject();
+//
+//             QFile file("project.log.txt");
+//             if (!file.open(QIODevice::ReadOnly)) {
+//                 QMessageBox::warning(this, "Error", "Could not open circuit file for reading.");
+//                 return;
+//             }
+//
+//             dataToSend = "CIRCUIT:" + file.readAll();
+//             file.close();
+//         }
+//         else if (selectedOption == "Send a signal as an input to a circuit") {
+//             QString fileName = QFileDialog::getOpenFileName(this, "Select Signal File",
+//                                                           QCoreApplication::applicationDirPath(),
+//                                                           "Text Files (*.txt);;All Files (*)");
+//             if (fileName.isEmpty()) return;
+//
+//             QFile file(fileName);
+//             if (!file.open(QIODevice::ReadOnly)) {
+//                 QMessageBox::warning(this, "Error", "Could not open signal file.");
+//                 return;
+//             }
+//
+//             dataToSend = "SIGNAL_INPUT:" + file.readAll();
+//             file.close();
+//         }
+//         else if (selectedOption == "Send component to circuit") {
+//             // Example implementation - you might want to expand this
+//             QString componentData = "COMPONENT:Basic implementation - extend as needed";
+//             dataToSend = componentData.toUtf8();
+//         }
+//
+//         // Send the data
+//         networkManager->sendData(dataToSend);
+//         statusBar()->showMessage("Data sent successfully", 3000);
+//
+//     } catch (const std::exception& e) {
+//         QMessageBox::warning(this, "Error", QString("Failed to send data: %1").arg(e.what()));
+//     }
+// }
 
 
 // Implement the data received handler:
+// Replace the onDataReceived method with this improved version:
 void MainWindow::onDataReceived(const QByteArray& data, const QString& type) {
+    qDebug() << "Data received, type:" << type << "size:" << data.size() << "bytes";
+
     QString message;
+    QString filePath;
 
-    if (type == "circuit") {
-        // Save received circuit data
-        QFile file("received_circuit.log.txt");
-        if (file.open(QIODevice::WriteOnly)) {
-            file.write(data);
-            file.close();
-            message = "Circuit file received and saved";
+    try {
+        if (type == "circuit") {
+            // Ask user where to save the circuit file
+            QString fileName = QFileDialog::getSaveFileName(
+                this,
+                "Save Received Circuit",
+                QCoreApplication::applicationDirPath() + "/received_circuit.psp",
+                "ParsaSpice Files (*.psp);;All Files (*)"
+            );
 
-            // Optional: Automatically load the received circuit
-            // loadProject("received_circuit.log.txt");
-        } else {
-            message = "Failed to save received circuit file";
+            if (fileName.isEmpty()) {
+                qDebug() << "User cancelled circuit file save";
+                return;
+            }
+
+            QFile file(fileName);
+            if (file.open(QIODevice::WriteOnly)) {
+                file.write(data);
+                file.close();
+                filePath = fileName;
+                message = QString("Circuit file received and saved as: %1").arg(fileName);
+            } else {
+                message = "Failed to save received circuit file";
+            }
         }
-    }
-    else if (type == "voltage") {
-        QString voltageData = QString::fromUtf8(data);
-        QStringList parts = voltageData.split(' ');
-        if (parts.size() >= 3 && parts[0] == "VOLTAGE_NODE") {
-            QString nodeName = parts[1];
-            double voltage = parts[2].toDouble();
-            message = QString("Voltage source received: %1V at node %2").arg(voltage).arg(nodeName);
+        else if (type == "signal") {
+            // Ask user where to save the signal file
+            QString fileName = QFileDialog::getSaveFileName(
+                this,
+                "Save Received Signal",
+                QCoreApplication::applicationDirPath() + "/received_signal.txt",
+                "Text Files (*.txt);;All Files (*)"
+            );
 
-            // Here you would typically add the voltage source to your circuit
-            //circuit.addComponent(Component::Type::VOLTAGE_SOURCE, "name", "node1", "node2", "value", const std::vector<double>& numericParams, const std::vector<std::string>& stringParams, bool isSinusoidal) {
- //addVoltageSource(nodeName, voltage);
-        }
-    }
-    else if (type == "signal") {
-        QFile file("received_signal.txt");
-        if (file.open(QIODevice::WriteOnly)) {
-            file.write(data);
-            file.close();
-            message = "Signal data received and saved";
-        } else {
-            message = "Failed to save received signal data";
-        }
-    }
-    else if (type == "component") {
-        message = "Component data received: " + QString::fromUtf8(data);
-        // Handle component data
-    }
-    else {
-        message = "Unknown data type received: " + QString::fromUtf8(data);
-    }
+            if (fileName.isEmpty()) {
+                qDebug() << "User cancelled signal file save";
+                return;
+            }
 
-    // Show notification
-    statusBar()->showMessage(message, 5000);
-    QMessageBox::information(this, "Data Received", message);
+            QFile file(fileName);
+            if (file.open(QIODevice::WriteOnly)) {
+                file.write(data);
+                file.close();
+                filePath = fileName;
+                message = QString("Signal file received and saved as: %1").arg(fileName);
+            } else {
+                message = "Failed to save received signal file";
+            }
+        }
+        else if (type == "voltage") {
+            QString voltageData = QString::fromUtf8(data);
+            QStringList parts = voltageData.split(' ');
+            if (parts.size() >= 2) {
+                QString nodeName = parts[0];
+                double voltage = parts[1].toDouble();
+                message = QString("Voltage source received: %1V at node %2").arg(voltage).arg(nodeName);
+
+                // You can add code here to automatically create the voltage source
+                // circuit->addComponent("V", "Received_Vsource", nodeName, "GND", voltage, {}, {}, false);
+            } else {
+                message = "Invalid voltage data received: " + voltageData;
+            }
+        }
+        else {
+            message = "Unknown data type received: " + type;
+            qDebug() << "Unknown data content:" << QString::fromUtf8(data);
+        }
+
+        // Show notification
+        statusBar()->showMessage(message, 5000);
+
+        // Show dialog only for important messages
+        if (!filePath.isEmpty() || type == "voltage") {
+            QMessageBox::information(this, "Data Received", message);
+        }
+
+        qDebug() << "Data processing completed:" << message;
+
+    } catch (const std::exception& e) {
+        QString errorMsg = QString("Error processing received data: %1").arg(e.what());
+        statusBar()->showMessage(errorMsg, 5000);
+        QMessageBox::warning(this, "Error", errorMsg);
+        qDebug() << "Error in onDataReceived:" << e.what();
+    }
 }
+// void MainWindow::onDataReceived(const QByteArray& data, const QString& type) {
+//     QString message;
+//
+//     if (type == "circuit") {
+//         // Save received circuit data
+//         QFile file("received_circuit.log.txt");
+//         if (file.open(QIODevice::WriteOnly)) {
+//             file.write(data);
+//             file.close();
+//             message = "Circuit file received and saved";
+//
+//             // Optional: Automatically load the received circuit
+//             // loadProject("received_circuit.log.txt");
+//         } else {
+//             message = "Failed to save received circuit file";
+//         }
+//     }
+//     else if (type == "voltage") {
+//         QString voltageData = QString::fromUtf8(data);
+//         QStringList parts = voltageData.split(' ');
+//         if (parts.size() >= 3 && parts[0] == "VOLTAGE_NODE") {
+//             QString nodeName = parts[1];
+//             double voltage = parts[2].toDouble();
+//             message = QString("Voltage source received: %1V at node %2").arg(voltage).arg(nodeName);
+//
+//             // Here you would typically add the voltage source to your circuit
+//             //circuit.addComponent(Component::Type::VOLTAGE_SOURCE, "name", "node1", "node2", "value", const std::vector<double>& numericParams, const std::vector<std::string>& stringParams, bool isSinusoidal) {
+//  //addVoltageSource(nodeName, voltage);
+//         }
+//     }
+//     else if (type == "signal") {
+//         QFile file("received_signal.txt");
+//         if (file.open(QIODevice::WriteOnly)) {
+//             file.write(data);
+//             file.close();
+//             message = "Signal data received and saved";
+//         } else {
+//             message = "Failed to save received signal data";
+//         }
+//     }
+//     else if (type == "component") {
+//         message = "Component data received: " + QString::fromUtf8(data);
+//         // Handle component data
+//     }
+//     else {
+//         message = "Unknown data type received: " + QString::fromUtf8(data);
+//     }
+//
+//     // Show notification
+//     statusBar()->showMessage(message, 5000);
+//     QMessageBox::information(this, "Data Received", message);
+// }

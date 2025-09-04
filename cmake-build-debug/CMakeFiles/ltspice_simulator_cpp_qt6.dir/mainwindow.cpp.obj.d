@@ -868,4 +868,6 @@ CMakeFiles/ltspice_simulator_cpp_qt6.dir/mainwindow.cpp.obj: \
  C:/Qt/6.9.1/mingw_64/include/QtCore/QFile \
  C:/Qt/6.9.1/mingw_64/include/QtCore/qfile.h \
  C:/Qt/6.9.1/mingw_64/include/QtCore/QTextStream \
- C:/Qt/6.9.1/mingw_64/include/QtCore/qtextstream.h
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qtextstream.h \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/QDebug \
+ C:/Qt/6.9.1/mingw_64/include/QtCore/qdebug.h

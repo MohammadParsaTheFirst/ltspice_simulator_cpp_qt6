@@ -306,34 +306,71 @@ void NetworkManager::sendData(const QByteArray& data) {
     }
 }
 ///added
+// In NetworkManager.cpp, fix the processIncomingData method:
 void NetworkManager::processIncomingData(const QByteArray& data) {
-    if (data.isEmpty()) return;
+    if (data.isEmpty()) {
+        qDebug() << "Received empty data";
+        return;
+    }
 
     QString dataStr = QString::fromUtf8(data);
     QString type;
     QByteArray content;
 
+    qDebug() << "Raw received data:" << dataStr.left(100) << "..."; // Show first 100 chars
+
     // Parse the message type based on prefixes
     if (dataStr.startsWith("CIRCUIT:")) {
         type = "circuit";
         content = data.mid(8); // Remove "CIRCUIT:" prefix
+        qDebug() << "Identified as circuit data";
     }
-    else if (dataStr.startsWith("VOLTAGE_NODE")) {
-        type = "voltage";
-        content = data;
-    }
-    else if (dataStr.startsWith("SIGNAL_INPUT:")) {
+    else if (dataStr.startsWith("SIGNAL:")) {
         type = "signal";
-        content = data.mid(13); // Remove "SIGNAL_INPUT:" prefix
+        content = data.mid(7); // Remove "SIGNAL:" prefix
+        qDebug() << "Identified as signal data";
     }
-    else if (dataStr.startsWith("COMPONENT:")) {
-        type = "component";
-        content = data.mid(10); // Remove "COMPONENT:" prefix
+    else if (dataStr.startsWith("VOLTAGE:")) {
+        type = "voltage";
+        content = data.mid(8); // Remove "VOLTAGE:" prefix
+        qDebug() << "Identified as voltage data:" << QString::fromUtf8(content);
     }
     else {
         type = "unknown";
         content = data;
+        qDebug() << "Unknown data type received";
     }
 
     emit dataReceived(content, type);
 }
+// void NetworkManager::processIncomingData(const QByteArray& data) {
+//     if (data.isEmpty()) return;
+//
+//     QString dataStr = QString::fromUtf8(data);
+//     QString type;
+//     QByteArray content;
+//
+//     // Parse the message type based on prefixes
+//     if (dataStr.startsWith("CIRCUIT:")) {
+//         type = "circuit";
+//         content = data.mid(8); // Remove "CIRCUIT:" prefix
+//     }
+//     else if (dataStr.startsWith("VOLTAGE_NODE")) {
+//         type = "voltage";
+//         content = data;
+//     }
+//     else if (dataStr.startsWith("SIGNAL_INPUT:")) {
+//         type = "signal";
+//         content = data.mid(13); // Remove "SIGNAL_INPUT:" prefix
+//     }
+//     else if (dataStr.startsWith("COMPONENT:")) {
+//         type = "component";
+//         content = data.mid(10); // Remove "COMPONENT:" prefix
+//     }
+//     else {
+//         type = "unknown";
+//         content = data;
+//     }
+//
+//     emit dataReceived(content, type);
+// }
