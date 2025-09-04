@@ -124,22 +124,54 @@ void NetworkManager::newConnection() {
     sendMessage(MessageType::ConnectionAccepted);
 }
 
+
 // void NetworkManager::readyRead() {
-//     QByteArray message = clientSocket->readAll();
-//     processMessage(message);
+//     while (clientSocket->bytesAvailable() > 0) {
+//         QByteArray message = clientSocket->readAll();
+//         if (!message.isEmpty()) {
+//             processIncomingData(message);
+//         }
+//     }
 // }
 void NetworkManager::readyRead() {
-    while (clientSocket->bytesAvailable() > 0) {
-        QByteArray message = clientSocket->readAll();
-        if (!message.isEmpty()) {
-            processIncomingData(message);
+    buffer.append(clientSocket->readAll());
+
+    while (buffer.size() >= static_cast<int>(sizeof(quint32))) {
+        QDataStream in(&buffer, QIODevice::ReadOnly);
+        in.setVersion(QDataStream::Qt_6_5);
+
+        // Read the message size
+        quint32 messageSize;
+        in >> messageSize;
+
+        // Check if we have the full message
+        if (buffer.size() < static_cast<int>(messageSize + sizeof(quint32))) {
+            // Incomplete message, wait for more data
+            return;
+        }
+
+        // Extract the complete message
+        QByteArray message = buffer.mid(sizeof(quint32), messageSize);
+        buffer = buffer.mid(sizeof(quint32) + messageSize);  // Remove processed data
+
+        // Process the message
+        QDataStream messageStream(message);
+        messageStream.setVersion(QDataStream::Qt_6_5);
+
+        int typeInt;
+        messageStream >> typeInt;
+        MessageType type = static_cast<MessageType>(typeInt);
+
+        QByteArray payload;
+        messageStream >> payload;
+
+        if (messageStream.status() == QDataStream::Ok) {
+            processMessage(payload);
+        } else {
+            qWarning() << "Invalid message format received";
         }
     }
 }
-// void NetworkManager::readyRead() {
-//     QByteArray message = clientSocket->readAll();
-//     processMessage(message);
-// }
 
 void NetworkManager::socketError(QAbstractSocket::SocketError error) {
     Q_UNUSED(error);
@@ -152,6 +184,32 @@ void NetworkManager::socketDisconnected() {
     disconnect();
 }
 
+
+// void NetworkManager::processMessage(MessageType type, const QByteArray& payload) {
+//     switch (type) {
+//         case MessageType::File: {
+//             QDataStream payloadStream(payload);
+//             payloadStream.setVersion(QDataStream::Qt_6_5);
+//
+//             QString fileName;
+//             QByteArray fileData;
+//             payloadStream >> fileName >> fileData;
+//
+//             if (payloadStream.status() != QDataStream::Ok) {
+//                 qWarning() << "Invalid file payload received";
+//                 return;
+//             }
+//
+//             emit fileReceived(fileName, fileData);
+//             qDebug() << "File received:" << fileName << "Size:" << fileData.size() << "bytes";
+//             break;
+//         }
+//         // Handle other MessageTypes as needed
+//         default:
+//             qWarning() << "Unknown message type received:" << static_cast<int>(type);
+//         break;
+//     }
+// }
 void NetworkManager::processMessage(const QByteArray& message) {
     QDataStream stream(message);
     stream.setVersion(QDataStream::Qt_6_5);
@@ -164,28 +222,56 @@ void NetworkManager::processMessage(const QByteArray& message) {
         QByteArray fileData;
         stream >> fileName >> fileData;
 
-        // Ask user where to save the file
-        QString savePath = QFileDialog::getSaveFileName(
-            nullptr,
-            "Save Received File",
-            QCoreApplication::applicationDirPath() + "/" + fileName,
-            "All Files (*)"
-        );
-
-        if (!savePath.isEmpty()) {
-            QFile file(savePath);
-            if (file.open(QIODevice::WriteOnly)) {
-                file.write(fileData);
-                file.close();
-                qDebug() << "File received and saved:" << savePath;
-
-                // Emit signal for main window
-                emit dataReceived(fileData, "file");
-            }
+        if (stream.status() != QDataStream::Ok) {
+            qWarning() << "Invalid file payload received";
+            return;
         }
+
+        emit fileReceived(fileName, fileData);
+        qDebug() << "File received:" << fileName << "Size:" << fileData.size() << "bytes";
+    } else {
+        qWarning() << "Unknown message type received:" << messageType;
     }
-    // ... rest of your existing message processing code
 }
+// void NetworkManager::processMessage(const QByteArray& message) {
+//     QDataStream stream(message);
+//     stream.setVersion(QDataStream::Qt_6_5);
+//
+//     QString messageType;
+//     stream >> messageType;
+//
+//     if (messageType == "FILE") {
+//         QString fileName;
+//         QByteArray fileData;
+//         stream >> fileName >> fileData;
+//
+//         // Emit signal instead of showing dialog here
+//         emit fileReceived(fileName, fileData);
+//         qDebug() << "File received:" << fileName << "Size:" << fileData.size() << "bytes";
+//
+//
+//         // Ask user where to save the file
+//         QString savePath = QFileDialog::getSaveFileName(
+//             nullptr,
+//             "Save Received File",
+//             QCoreApplication::applicationDirPath() + "/" + fileName,
+//             "All Files (*)"
+//         );
+//
+//         if (!savePath.isEmpty()) {
+//             QFile file(savePath);
+//             if (file.open(QIODevice::WriteOnly)) {
+//                 file.write(fileData);
+//                 file.close();
+//                 qDebug() << "File received and saved:" << savePath;
+//
+//                 // Emit signal for main window
+//                 emit dataReceived(fileData, "file");
+//             }
+//         }
+//     }
+//     // ... rest of your existing message processing code
+// }
 
 void NetworkManager::sendMessage(MessageType type, const QByteArray& data) {
     if (!connected) return;
@@ -195,11 +281,23 @@ void NetworkManager::sendMessage(MessageType type, const QByteArray& data) {
     stream.setVersion(QDataStream::Qt_6_5);
 
     stream << static_cast<quint32>(type);
-    if (!data.isEmpty()) {
-        stream.writeRawData(data.constData(), data.size());
+
+    QByteArray packet;
+    QDataStream packetStream(&packet, QIODevice::WriteOnly);
+    packetStream.setVersion(QDataStream::Qt_6_5);
+    packetStream << static_cast<quint32>(message.size()) << message;
+
+    if (clientSocket->write(packet) == -1) {
+        qWarning() << "Failed to send message:" << clientSocket->errorString();
+    } else {
+        qDebug() << "Sent message of type:" << static_cast<int>(type) << "Size:" << message.size();
     }
 
-    clientSocket->write(message);
+    // if (!data.isEmpty()) {
+    //     stream.writeRawData(data.constData(), data.size());
+    // }
+    //
+    // clientSocket->write(message);
 }
 
 ///added
@@ -305,9 +403,8 @@ void NetworkManager::processIncomingData(const QByteArray& data) {
 
 
 
-// Add this method implementation
 void NetworkManager::sendFile(const QString& filePath) {
-    if (!connected || !clientSocket) {
+    if (!isConnected()) {
         qWarning() << "Cannot send file: Not connected to any client/server";
         return;
     }
@@ -323,17 +420,63 @@ void NetworkManager::sendFile(const QString& filePath) {
     QByteArray fileData = file.readAll();
     file.close();
 
-    // Create message structure: FILE:<filename>:<filedata>
     QByteArray message;
     QDataStream stream(&message, QIODevice::WriteOnly);
     stream.setVersion(QDataStream::Qt_6_5);
-
     stream << QString("FILE") << fileName << fileData;
 
-    // Send the message
-    if (clientSocket->write(message) == -1) {
+    // Add size prefix
+    QByteArray packet;
+    QDataStream packetStream(&packet, QIODevice::WriteOnly);
+    packetStream.setVersion(QDataStream::Qt_6_5);
+    packetStream << static_cast<quint32>(message.size()) << message;
+
+    if (clientSocket->write(packet) == -1) {
         qWarning() << "Failed to send file:" << clientSocket->errorString();
     } else {
         qDebug() << "File sent successfully:" << fileName << "Size:" << fileData.size() << "bytes";
     }
 }
+
+// Add this method implementation
+// void NetworkManager::sendFile(const QString& filePath) {
+//     if (!connected || !clientSocket) {
+//         qWarning() << "Cannot send file: Not connected to any client/server";
+//         return;
+//     }
+//
+//     QFile file(filePath);
+//     if (!file.open(QIODevice::ReadOnly)) {
+//         qWarning() << "Cannot open file for reading:" << filePath;
+//         return;
+//     }
+//
+//     QFileInfo fileInfo(filePath);
+//     QString fileName = fileInfo.fileName();
+//     QByteArray fileData = file.readAll();
+//     file.close();
+//
+//     // Create payload: filename + file data
+//     QByteArray payload;
+//     QDataStream payloadStream(&payload, QIODevice::WriteOnly);
+//     payloadStream.setVersion(QDataStream::Qt_6_5);
+//     payloadStream << fileName << fileData;
+//
+//     // Send as MessageType::File
+//     sendMessage(MessageType::File, payload);
+//
+//     qDebug() << "File sent successfully:" << fileName << "Size:" << fileData.size() << "bytes";
+//     // // Create message structure: FILE:<filename>:<filedata>
+//     // QByteArray message;
+//     // QDataStream stream(&message, QIODevice::WriteOnly);
+//     // stream.setVersion(QDataStream::Qt_6_5);
+//     //
+//     // stream << QString("FILE") << fileName << fileData;
+//     //
+//     // // Send the message
+//     // if (clientSocket->write(message) == -1) {
+//     //     qWarning() << "Failed to send file:" << clientSocket->errorString();
+//     // } else {
+//     //     qDebug() << "File sent successfully:" << fileName << "Size:" << fileData.size() << "bytes";
+//     // }
+// }

@@ -50,6 +50,7 @@ signals:
     void circuitFileReceived();
     void signalDataReceived(const std::map<double, double>& data, const QString& signalName);
     void dataReceived(const QByteArray& data, const QString& type); // Add this line
+    void fileReceived(const QString& fileName, const QByteArray& fileData);
 
 private slots:
     void newConnection();
@@ -58,9 +59,12 @@ private slots:
     void socketDisconnected();
 
 private:
+    //void processMessage(MessageType type, const QByteArray& payload);
     void processMessage(const QByteArray& message);
+    //void processMessage(const QByteArray& message);
     void sendMessage(MessageType type, const QByteArray& data = QByteArray());
 
+    QByteArray buffer;
     QTcpServer* server;
     QTcpSocket* clientSocket;
     Circuit* circuit;

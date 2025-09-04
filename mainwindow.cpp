@@ -25,6 +25,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     networkManager = new NetworkManager(&circuit, this);
     connect(networkManager, &NetworkManager::connectionStatusChanged,
              this, &MainWindow::onNetworkStatusChanged);
+    connect(networkManager, &NetworkManager::fileReceived,
+            this, &MainWindow::onFileReceived);
+
     // connect(networkManager, &NetworkManager::voltageSourceReceived,
     //         this, &MainWindow::onVoltageSourceReceived);
     // connect(networkManager, &NetworkManager::circuitFileReceived,
@@ -442,3 +445,55 @@ void MainWindow::hSendFile() {
         QMessageBox::warning(this, "Error", QString("Failed to send file: %1").arg(e.what()));
     }
 }
+
+
+void MainWindow::onFileReceived(const QString& fileName, const QByteArray& fileData) {
+    QString savePath = QFileDialog::getSaveFileName(
+        this,
+        "Save Received File",
+        QCoreApplication::applicationDirPath() + "/" + fileName,
+        "All Files (*)"
+    );
+
+    if (savePath.isEmpty()) {
+        qDebug() << "User canceled file save";
+        return;
+    }
+
+    QFile file(savePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, "Error", QString("Failed to save file '%1'.").arg(fileName));
+        return;
+    }
+
+    if (file.write(fileData) != fileData.size()) {
+        qWarning() << "Failed to write complete file data to" << savePath;
+    } else {
+        statusBar()->showMessage("File saved successfully: " + QFileInfo(savePath).fileName(), 3000);
+        QMessageBox::information(this, "Success", QString("File '%1' received and saved successfully.").arg(fileName));
+    }
+    file.close();
+}
+// void MainWindow::onFileReceived(const QString& fileName, const QByteArray& fileData) {
+//     // Ask user where to save the file
+//     QString savePath = QFileDialog::getSaveFileName(
+//         this,
+//         "Save Received File",
+//         QCoreApplication::applicationDirPath() + "/" + fileName,
+//         "All Files (*)"
+//     );
+//
+//     if (!savePath.isEmpty()) {
+//         QFile file(savePath);
+//         if (file.open(QIODevice::WriteOnly)) {
+//             file.write(fileData);
+//             file.close();
+//             statusBar()->showMessage("File saved successfully: " + QFileInfo(savePath).fileName(), 3000);
+//             QMessageBox::information(this, "Success",
+//                 QString("File '%1' received and saved successfully.").arg(fileName));
+//         } else {
+//             QMessageBox::warning(this, "Error",
+//                 QString("Failed to save file '%1'.").arg(fileName));
+//         }
+//     }
+// }

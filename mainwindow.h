@@ -77,6 +77,7 @@ private:
     void onCircuitFileReceived();                                                                                       // Add this slot
     void onSignalDataReceived(const std::map<double, double>& data, const QString& signalName);                         // Add this slot
     //void onDataReceived(const QByteArray& data, const QString& type); // Add this line
+    void onFileReceived(const QString& fileName, const QByteArray& fileData);
 
 public:
     MainWindow(QWidget* parent = Q_NULLPTR);
